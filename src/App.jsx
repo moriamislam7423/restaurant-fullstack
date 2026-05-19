@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_URL = "http://localhost:5050/api";
+const API_URL = "https://restaurant-fullstack-8nlb.onrender.com/api";
 
 const galleryImages = [
   "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=800&q=80",
