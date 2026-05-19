@@ -14,6 +14,7 @@ const galleryImages = [
 export default function App() {
   const [menuItems, setMenuItems] = useState([]);
   const [cart, setCart] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [customerName, setCustomerName] = useState("");
   const [message, setMessage] = useState("");
 
@@ -23,6 +24,30 @@ export default function App() {
       .then((data) => setMenuItems(data))
       .catch((err) => console.log("Error loading menu:", err));
   }, []);
+
+  const fetchOrders = async () => {
+    const res = await fetch(`${API_URL}/orders`);
+    const data = await res.json();
+    setOrders(data);
+  };
+
+  const updateOrderStatus = async (id) => {
+    await fetch(`${API_URL}/orders/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "Completed" }),
+    });
+
+    fetchOrders();
+  };
+
+  const deleteOrder = async (id) => {
+    await fetch(`${API_URL}/orders/${id}`, {
+      method: "DELETE",
+    });
+
+    fetchOrders();
+  };
 
   const addToCart = (item) => {
     const exist = cart.find((x) => x._id === item._id);
@@ -55,6 +80,11 @@ export default function App() {
   const clearCart = () => {
     setCart([]);
   };
+
+  const total = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
   const placeOrder = async () => {
     if (cart.length === 0) {
@@ -90,16 +120,12 @@ export default function App() {
       setCart([]);
       setCustomerName("");
       setMessage("Order placed and saved to MongoDB.");
+      fetchOrders();
     } catch (error) {
       setMessage("Order could not be placed.");
       console.log(error);
     }
   };
-
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
 
   return (
     <>
@@ -122,6 +148,7 @@ export default function App() {
             <ul className="navbar-nav ms-auto">
               <li className="nav-item"><a className="nav-link" href="#home">Home</a></li>
               <li className="nav-item"><a className="nav-link" href="#menu">Menu</a></li>
+              <li className="nav-item"><a className="nav-link" href="#orders">Orders</a></li>
               <li className="nav-item"><a className="nav-link" href="#gallery">Gallery</a></li>
               <li className="nav-item"><a className="nav-link" href="#about">About</a></li>
               <li className="nav-item"><a className="nav-link" href="#contact">Contact</a></li>
@@ -213,6 +240,50 @@ export default function App() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section id="orders" className="container py-5">
+        <h2 className="text-center fw-bold mb-4">Order Management</h2>
+
+        <button className="btn btn-primary mb-3" onClick={fetchOrders}>
+          Read Orders From Database
+        </button>
+
+        {orders.length === 0 ? (
+          <p>No orders loaded yet.</p>
+        ) : (
+          orders.map((order) => (
+            <div className="card shadow mb-3" key={order._id}>
+              <div className="card-body">
+                <h5>Customer: {order.customerName}</h5>
+                <p>Status: {order.status}</p>
+                <p>Total: ${order.total.toFixed(2)}</p>
+
+                <ul>
+                  {order.items.map((item, index) => (
+                    <li key={index}>
+                      {item.name} × {item.quantity}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  className="btn btn-success me-2"
+                  onClick={() => updateOrderStatus(order._id)}
+                >
+                  Update to Completed
+                </button>
+
+                <button
+                  className="btn btn-danger"
+                  onClick={() => deleteOrder(order._id)}
+                >
+                  Delete Order
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </section>
 
       <section id="gallery" className="bg-light py-5">
